@@ -12,10 +12,12 @@ export default function Customer() {
   const [isEditing, setIsEditing] = useState(false); // Track editing state
   const [currentCustomerId, setCurrentCustomerId] = useState(null); // Store current customer ID for editing
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE; // Set API base URL
+
   // Fetch customers from the database on component mount
   const fetchCustomers = async () => {
     try {
-      const response = await fetch("/api/customer");
+      const response = await fetch(`${API_BASE}/api/customer`);
       if (!response.ok) {
         throw new Error("Failed to fetch customers");
       }
@@ -37,7 +39,7 @@ export default function Customer() {
     };
 
     try {
-      const response = await fetch("/api/customer", {
+      const response = await fetch(`${API_BASE}/api/customer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,13 +67,15 @@ export default function Customer() {
   const handleDeleteCustomer = async (customerId) => {
     console.log("Deleting customer with ID:", customerId);
     try {
-      const response = await fetch(`/api/customer?id=${customerId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ customerId }),
-      });
+      const response = await fetch(
+        `${API_BASE}/api/customer?id=${customerId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         setCustomers((prevCustomers) =>
@@ -102,13 +106,16 @@ export default function Customer() {
     };
 
     try {
-      const response = await fetch(`/api/customer?id=${currentCustomerId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedCustomer),
-      });
+      const response = await fetch(
+        `${API_BASE}/api/customer?id=${currentCustomerId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedCustomer),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
