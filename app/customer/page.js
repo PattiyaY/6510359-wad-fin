@@ -9,35 +9,30 @@ export default function Customer() {
   const [memberno, setMember] = useState(1); // Starts at 1
   const [interest, setInterest] = useState("");
   const [customers, setCustomers] = useState([]);
+  const [isEditing, setIsEditing] = useState(false); // Track editing state
+  const [currentCustomerId, setCurrentCustomerId] = useState(null); // Store current customer ID for editing
 
   // Fetch customers from the database on component mount
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const response = await fetch("/api/customer");
-        if (!response.ok) {
-          throw new Error("Failed to fetch customers");
-        }
-        const data = await response.json();
-        setCustomers(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
+  const fetchCustomers = async () => {
+    try {
+      const response = await fetch("/api/customer");
+      if (!response.ok) {
+        throw new Error("Failed to fetch customers");
       }
-    };
-
-    fetchCustomers();
-  }, []);
-
-  if (loading) return <p>Loading customers...</p>;
-  if (error) return <p>Error: {error}</p>;
+      const data = await response.json();
+      setCustomers(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddCustomer = async () => {
     const newCustomer = {
       name,
       dob,
-      memberno, // Use memberno state
+      memberno,
       interest,
     };
 
@@ -47,19 +42,14 @@ export default function Customer() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newCustomer), // Use the newCustomer object directly
+        body: JSON.stringify(newCustomer),
       });
 
       if (response.ok) {
         const result = await response.json();
         console.log(result.message);
-
-        // Update the customer list by adding the new customer
         setCustomers((prevCustomers) => [...prevCustomers, newCustomer]);
-
-        // Increment member number for next customer
         setMember((prevMemberNo) => prevMemberNo + 1);
-
         // Clear input fields
         setName("");
         setDOB("");
@@ -73,13 +63,17 @@ export default function Customer() {
   };
 
   const handleDeleteCustomer = async (customerId) => {
+    console.log("Deleting customer with ID:", customerId);
     try {
-      const response = await fetch(`/api/customer/${customerId}`, {
+      const response = await fetch(`/api/customer?id=${customerId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customerId }),
       });
 
       if (response.ok) {
-        // Update the customers state to remove the deleted customer
         setCustomers((prevCustomers) =>
           prevCustomers.filter((customer) => customer._id !== customerId)
         );
@@ -92,10 +86,67 @@ export default function Customer() {
     }
   };
 
+  const handleEditCustomer = (customer) => {
+    setIsEditing(true);
+    setCurrentCustomerId(customer._id);
+    setName(customer.name);
+    setDOB(customer.dob);
+    setInterest(customer.interest);
+  };
+
+  const handleUpdateCustomer = async () => {
+    const updatedCustomer = {
+      name,
+      dob,
+      interest,
+    };
+
+    try {
+      const response = await fetch(`/api/customer?id=${currentCustomerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedCustomer),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(result.message);
+
+        // Update local state with edited customer
+        setCustomers((prevCustomers) =>
+          prevCustomers.map((customer) =>
+            customer._id === currentCustomerId
+              ? { ...customer, ...updatedCustomer }
+              : customer
+          )
+        );
+
+        // Reset editing state
+        setIsEditing(false);
+        setCurrentCustomerId(null);
+        setName("");
+        setDOB("");
+        setInterest("");
+      } else {
+        console.error("Failed to update customer");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
   return (
     <>
       <div className="max-w-md mx-auto bg-gray-100 p-6 rounded-lg shadow-lg">
-        <h3 className="text-xl font-semibold mb-4">Add New Customer</h3>
+        <h3 className="text-xl font-semibold mb-4">
+          {isEditing ? "Edit Customer" : "Add New Customer"}
+        </h3>
         <div className="space-y-4">
           <input
             type="text"
@@ -119,10 +170,10 @@ export default function Customer() {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={handleAddCustomer}
+            onClick={isEditing ? handleUpdateCustomer : handleAddCustomer}
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
           >
-            Add Customer
+            {isEditing ? "Update Customer" : "Add Customer"}
           </button>
         </div>
       </div>
@@ -142,12 +193,20 @@ export default function Customer() {
               <p>Member No: {customer.memberno}</p>
               <p>Interest: {customer.interest}</p>
             </div>
-            <button
-              onClick={() => handleDeleteCustomer(customer._id)}
-              className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 transition duration-200"
-            >
-              Delete
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleEditCustomer(customer)}
+                className="bg-yellow-500 text-white py-1 px-3 rounded-md hover:bg-yellow-600 transition duration-200"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteCustomer(customer._id)}
+                className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 transition duration-200"
+              >
+                Delete
+              </button>
+            </div>
           </li>
         ))}
       </ul>
