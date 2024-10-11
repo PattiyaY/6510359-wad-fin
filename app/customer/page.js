@@ -17,7 +17,7 @@ export default function Customer() {
   // Fetch customers from the database on component mount
   const fetchCustomers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/customer`);
+      const response = await fetch(`${API_BASE}/customer`);
       if (!response.ok) {
         throw new Error("Failed to fetch customers");
       }
@@ -39,7 +39,7 @@ export default function Customer() {
     };
 
     try {
-      const response = await fetch(`${API_BASE}/api/customer`, {
+      const response = await fetch(`${API_BASE}/customer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -67,15 +67,12 @@ export default function Customer() {
   const handleDeleteCustomer = async (customerId) => {
     console.log("Deleting customer with ID:", customerId);
     try {
-      const response = await fetch(
-        `${API_BASE}/api/customer?id=${customerId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE}/customer?id=${customerId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
         setCustomers((prevCustomers) =>
@@ -107,7 +104,7 @@ export default function Customer() {
 
     try {
       const response = await fetch(
-        `${API_BASE}/api/customer?id=${currentCustomerId}`,
+        `${API_BASE}/customer?id=${currentCustomerId}`,
         {
           method: "PUT",
           headers: {
